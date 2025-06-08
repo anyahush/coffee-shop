@@ -1,4 +1,5 @@
 package com.mcdonald.coffeeshop.controller;
+import com.mcdonald.coffeeshop.model.SupplierInfo;
 import com.mcdonald.coffeeshop.model.SupplyItem;
 import com.mcdonald.coffeeshop.service.SupplyItemService;
 import com.fasterxml.jackson.databind.MappingIterator;
@@ -103,30 +104,51 @@ public class SupplyItemController {
     }
 
     // 8. REORDER LIST
-// GET /api/supplies/reorder
     @GetMapping("/reorder")
     public List<SupplyItem> getReorderList() {
         return service.getReorderList();
     }
 
     // 9. IMPORT FROM CSV
-// POST /api/supplies/import (form‐data file field called "file")
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> importCsv(@RequestParam("file") MultipartFile file) {
         try {
             CsvMapper mapper = new CsvMapper();
             CsvSchema schema = CsvSchema.emptySchema().withHeader();
-            MappingIterator<SupplyItem> it = mapper
-                    .readerFor(SupplyItem.class)
+            // read each row as a Map<String,String>
+            MappingIterator<Map<String,String>> it = mapper
+                    .readerFor(Map.class)
                     .with(schema)
                     .readValues(file.getInputStream());
 
-            it.forEachRemaining(service::createOrUpdate);
+            while (it.hasNext()) {
+                Map<String,String> row = it.next();
+                // build SupplyItem manually
+                SupplyItem item = new SupplyItem();
+                item.setName(row.get("name"));
+                item.setCategory(row.get("category"));
+                item.setQuantityInStock(Integer.valueOf(row.get("quantityInStock")));
+                item.setReorderLevel(Integer.valueOf(row.get("reorderLevel")));
+
+                // nested supplier fields
+                SupplierInfo sup = new SupplierInfo();
+                sup.setName(row.get("supplier.name"));
+                sup.setContact(row.get("supplier.contactEmail"));
+                item.setSupplier(sup);
+
+                service.createOrUpdate(item);
+            }
+
             return ResponseEntity.ok("Imported successfully");
         } catch (IOException e) {
             return ResponseEntity
                     .badRequest()
                     .body("Failed to parse CSV: " + e.getMessage());
+        } catch (RuntimeException e) {
+            // catch NumberFormat, missing keys, etc.
+            return ResponseEntity
+                    .status(500)
+                    .body("Import error on row: " + e.getMessage());
         }
     }
 }
