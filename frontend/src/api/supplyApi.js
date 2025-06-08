@@ -2,7 +2,6 @@
 import axios from 'axios';
 
 // Base URL for all supply-related endpoints.
-// If you’re using Create React App and proxy in package.json, this can be just '/api/supplies'
 const BASE = '/api/supplies';
 
 export function getAllSupplies() {
