@@ -1,89 +1,167 @@
+// src/components/SupplyForm.jsx
 import React, { useState, useEffect } from 'react';
 
-export default function SupplyForm({ initialData = {}, onSubmit, onCancel }) {
-    // flatten nested supplier into local state
-    const [form, setForm] = useState({
-        id:                null,
-        name:              '',
-        category:          '',
-        quantityInStock:   '',
-        reorderLevel:      '',
-        supplierName:      '',
-        supplierContact:   '',
-    });
+export default function SupplyForm({ initialData, onSubmit, onCancel }) {
+    // 1) Define your “empty” template
+    const emptyForm = {
+        name:            '',
+        category:        '',
+        quantityInStock: '',
+        reorderLevel:    '',
+        supplierName:    '',
+        supplierContact: ''
+    };
 
-    // sync in editing data
+    // 2) form state, initialize from initialData (for edit) or empty
+    const [form, setForm] = useState(() =>
+        initialData
+            ? {
+                name:            initialData.name,
+                category:        initialData.category,
+                quantityInStock: initialData.quantityInStock.toString(),
+                reorderLevel:    initialData.reorderLevel.toString(),
+                supplierName:    initialData.supplier?.name || '',
+                supplierContact: initialData.supplier?.contactEmail || ''
+            }
+            : emptyForm
+    );
+
+    // 3) Whenever initialData changes (i.e. user clicked “Edit”), re-populate form
     useEffect(() => {
         if (initialData) {
             setForm({
-                id:                initialData.id ?? null,
-                name:              initialData.name || '',
-                category:          initialData.category || '',
-                quantityInStock:   initialData.quantityInStock ?? '',
-                reorderLevel:      initialData.reorderLevel ?? '',
-                supplierName:      initialData.supplier?.name    || '',
-                supplierContact:   initialData.supplier?.contact || '',
+                name:            initialData.name,
+                category:        initialData.category,
+                quantityInStock: initialData.quantityInStock.toString(),
+                reorderLevel:    initialData.reorderLevel.toString(),
+                supplierName:    initialData.supplier?.name || '',
+                supplierContact: initialData.supplier?.contactEmail || ''
             });
+        } else {
+            setForm(emptyForm);
         }
     }, [initialData]);
 
+    // 4) Handy handler for all input changes
     const handleChange = e => {
         const { id, value } = e.target;
         setForm(f => ({ ...f, [id]: value }));
     };
 
+    // 5) On save: notify parent, then clear form
     const handleSubmit = e => {
         e.preventDefault();
         onSubmit({
-            id:               form.id,
-            name:             form.name,
-            category:         form.category,
-            quantityInStock:  Number(form.quantityInStock),
-            reorderLevel:     Number(form.reorderLevel),
+            // convert numbers back to ints
+            ...form,
+            quantityInStock: parseInt(form.quantityInStock, 10),
+            reorderLevel:    parseInt(form.reorderLevel, 10),
             supplier: {
-                name:    form.supplierName,
-                contact: form.supplierContact,
+                name:          form.supplierName.trim(),
+                contactEmail:  form.supplierContact.trim()
             }
         });
+        setForm(emptyForm);
+    };
+
+    // 6) On cancel: clear + notify parent
+    const handleCancel = () => {
+        setForm(emptyForm);
+        onCancel();
     };
 
     return (
-        <form onSubmit={handleSubmit} className="d-flex flex-wrap align-items-end gx-3 gy-2">
-            {[
-                { id: 'name',            label: 'Name',            width: '150px' },
-                { id: 'category',        label: 'Category',        width: '150px' },
-                { id: 'quantityInStock', label: 'Qty',             width: '80px',  type: 'number' },
-                { id: 'reorderLevel',    label: 'Reorder level',   width: '100px', type: 'number' },
-                { id: 'supplierName',    label: 'Supplier Name',   width: '180px' },
-                { id: 'supplierContact', label: 'Supplier Contact',width: '200px' },
-            ].map(({ id, label, width, type = 'text' }) => (
-                <div key={id} className="d-flex flex-column">
-                    <label htmlFor={id} className="form-label mb-1">{label}</label>
-                    <input
-                        id={id}
-                        type={type}
-                        className="form-control"
-                        min="0"
-                        style={{ width }}
-                        value={form[id]}
-                        onChange={handleChange}
-                    />
-                </div>
-            ))}
+        <form onSubmit={handleSubmit} className="row g-2 align-items-end">
+            {/* Name */}
+            <div className="col">
+                <label htmlFor="name" className="form-label">Name</label>
+                <input
+                    id="name"
+                    type="text"
+                    className="form-control"
+                    value={form.name}
+                    onChange={handleChange}
+                    required
+                />
+            </div>
 
-            <div className="d-flex align-items-center ms-3">
+            {/* Category */}
+            <div className="col">
+                <label htmlFor="category" className="form-label">Category</label>
+                <input
+                    id="category"
+                    type="text"
+                    className="form-control"
+                    value={form.category}
+                    onChange={handleChange}
+                    required
+                />
+            </div>
+
+            {/* Qty */}
+            <div className="col">
+                <label htmlFor="quantityInStock" className="form-label">Qty</label>
+                <input
+                    id="quantityInStock"
+                    type="number"
+                    min="0"
+                    className="form-control"
+                    value={form.quantityInStock}
+                    onChange={handleChange}
+                    required
+                />
+            </div>
+
+            {/* Reorder */}
+            <div className="col">
+                <label htmlFor="reorderLevel" className="form-label">Reorder level</label>
+                <input
+                    id="reorderLevel"
+                    type="number"
+                    min="0"
+                    className="form-control"
+                    value={form.reorderLevel}
+                    onChange={handleChange}
+                    required
+                />
+            </div>
+
+            {/* Supplier Name */}
+            <div className="col">
+                <label htmlFor="supplierName" className="form-label">Supplier</label>
+                <input
+                    id="supplierName"
+                    type="text"
+                    className="form-control"
+                    value={form.supplierName}
+                    onChange={handleChange}
+                />
+            </div>
+
+            {/* Supplier Contact */}
+            <div className="col">
+                <label htmlFor="supplierContact" className="form-label">Supplier Contact</label>
+                <input
+                    id="supplierContact"
+                    type="email"
+                    className="form-control"
+                    value={form.supplierContact}
+                    onChange={handleChange}
+                />
+            </div>
+
+            {/* Buttons */}
+            <div className="col-auto">
                 <button type="submit" className="btn btn-primary me-2">
                     Save
                 </button>
-                {onCancel && (
-                    <button
-                        type="button"
-                        className="btn btn-outline-danger"
-                        onClick={onCancel}
-                    >
-                        Cancel
-                    </button>
-                )}
+                <button
+                    type="button"
+                    className="btn btn-outline-secondary"
+                    onClick={handleCancel}
+                >
+                    Cancel
+                </button>
             </div>
         </form>
     );
