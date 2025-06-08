@@ -14,7 +14,6 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/supplies")
@@ -118,38 +117,52 @@ public class SupplyItemController {
             CsvMapper mapper = new CsvMapper();
             CsvSchema schema = CsvSchema.emptySchema().withHeader();
             MappingIterator<Map<String,String>> it = mapper
-                    .readerFor(new TypeReference<Map<String,String>>() {})
+                    .readerFor(new TypeReference<Map<String,String>>(){})
                     .with(schema)
                     .readValues(file.getInputStream());
 
             while (it.hasNext()) {
                 Map<String,String> row = it.next();
+                // parse first so we can validate
+                int qty     = Integer.parseInt(row.get("quantityInStock"));
+                int reorder = Integer.parseInt(row.get("reorderLevel"));
 
-                // build the incoming SupplyItem
-                SupplyItem toUpsert = new SupplyItem();
-                toUpsert.setName(row.get("name"));
-                toUpsert.setCategory(row.get("category"));
-                toUpsert.setQuantityInStock(Integer.valueOf(row.get("quantityInStock")));
-                toUpsert.setReorderLevel(   Integer.valueOf(row.get("reorderLevel")));
+                // reject any negative numbers
+                if (qty < 0 || reorder < 0) {
+                    throw new RuntimeException(
+                            String.format(
+                                    "Negative numbers not allowed"
+                            )
+                    );
+                }
+
+                // now build your entity
+                SupplyItem item = new SupplyItem();
+                item.setName(row.get("name"));
+                item.setCategory(row.get("category"));
+                item.setQuantityInStock(qty);
+                item.setReorderLevel(reorder);
 
                 SupplierInfo sup = new SupplierInfo();
-                sup.setName(         row.get("supplier.name"));
+                sup.setName(row.get("supplier.name"));
                 sup.setContact(row.get("supplier.contactEmail"));
-                toUpsert.setSupplier(sup);
+                item.setSupplier(sup);
 
-                // UP SERT in one call:
-                service.upsert(toUpsert);
+                // save or update
+                service.createOrUpdate(item);
             }
 
             return ResponseEntity.ok("Imported successfully");
-        }
-        catch (IOException e) {
-            return ResponseEntity.badRequest()
+        } catch (IOException e) {
+            return ResponseEntity
+                    .badRequest()
                     .body("Failed to parse CSV: " + e.getMessage());
-        }
-        catch (RuntimeException e) {
-            return ResponseEntity.status(500)
-                    .body("Import error on row: " + e.getMessage());
+        } catch (RuntimeException e) {
+            // catches our negative‐value check & any parse errors
+            return ResponseEntity
+                    .status(400)
+                    .body("Import failed: " + e.getMessage());
         }
     }
+
 }
