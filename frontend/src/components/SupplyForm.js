@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 export default function SupplyForm({ initialData, onSubmit, onCancel }) {
     // 1) Define your “empty” template
     const emptyForm = {
+        id: null,
         name:            '',
         category:        '',
         quantityInStock: '',
@@ -13,23 +14,26 @@ export default function SupplyForm({ initialData, onSubmit, onCancel }) {
     };
 
     // 2) form state, initialize from initialData (for edit) or empty
-    const [form, setForm] = useState(() =>
-        initialData
-            ? {
+    const [form, setForm] = useState(() => {
+        if (initialData) {
+            return {
+                id:               initialData.id,
                 name:            initialData.name,
                 category:        initialData.category,
                 quantityInStock: initialData.quantityInStock.toString(),
                 reorderLevel:    initialData.reorderLevel.toString(),
                 supplierName:    initialData.supplier?.name || '',
                 supplierContact: initialData.supplier?.contactEmail || ''
-            }
-            : emptyForm
-    );
+             };
+        }
+        return emptyForm;
+    });
 
     // 3) Whenever initialData changes (i.e. user clicked “Edit”), re-populate form
     useEffect(() => {
         if (initialData) {
             setForm({
+                id:               initialData.id,
                 name:            initialData.name,
                 category:        initialData.category,
                 quantityInStock: initialData.quantityInStock.toString(),
@@ -51,16 +55,19 @@ export default function SupplyForm({ initialData, onSubmit, onCancel }) {
     // 5) On save: notify parent, then clear form
     const handleSubmit = e => {
         e.preventDefault();
-        onSubmit({
-            // convert numbers back to ints
-            ...form,
-            quantityInStock: parseInt(form.quantityInStock, 10),
-            reorderLevel:    parseInt(form.reorderLevel, 10),
+        // build payload including id if present
+        const payload = {
+            ...(form.id != null ? { id: form.id } : {}),
+                name:            form.name.trim(),
+                category:        form.category.trim(),
+                quantityInStock: parseInt(form.quantityInStock, 10),
+                reorderLevel:    parseInt(form.reorderLevel, 10),
             supplier: {
-                name:          form.supplierName.trim(),
-                contactEmail:  form.supplierContact.trim()
+                name: form.supplierName.trim(),
+                    contactEmail:  form.supplierContact.trim()
             }
-        });
+        };
+        onSubmit(payload);
         setForm(emptyForm);
     };
 
