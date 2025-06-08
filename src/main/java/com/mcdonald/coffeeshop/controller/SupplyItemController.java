@@ -66,18 +66,22 @@ public class SupplyItemController {
     }
 
     // 6. SEARCH (by name, category or supplier)
+    @GetMapping("/search")
     public List<SupplyItem> search(
-            @RequestParam Map<String,String> params) {
-
-        if (params.containsKey("name")) {
-            return service.searchByName(params.get("name"));
-        } else if (params.containsKey("category")) {
-            return service.searchByCategory(params.get("category"));
-        } else if (params.containsKey("supplier")) {
-            return service.searchBySupplier(params.get("supplier"));
-        } else {
-            return List.of(); // or service.findAll()
+            @RequestParam(name="name",     required=false) String name,
+            @RequestParam(name="category", required=false) String category,
+            @RequestParam(name="supplier", required=false) String supplier
+    ) {
+        if (name != null) {
+            return service.searchByName(name);
         }
+        if (category != null) {
+            return service.searchByCategory(category);
+        }
+        if (supplier != null) {
+            return service.searchBySupplier(supplier);
+        }
+        return List.of();
     }
 
     // 7. UPDATE QUANTITY
