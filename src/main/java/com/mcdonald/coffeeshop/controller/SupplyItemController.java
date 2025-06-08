@@ -113,6 +113,11 @@ public class SupplyItemController {
     // 9. IMPORT FROM CSV
     @PostMapping(value = "/import", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> importCsv(@RequestParam("file") MultipartFile file) {
+        if (file == null || file.isEmpty()) {
+            return ResponseEntity
+                    .badRequest()
+                    .body("Import failed: no CSV uploaded");
+        }
         try {
             CsvMapper mapper = new CsvMapper();
             CsvSchema schema = CsvSchema.emptySchema().withHeader();
@@ -161,7 +166,7 @@ public class SupplyItemController {
             // catches our negative‐value check & any parse errors
             return ResponseEntity
                     .status(400)
-                    .body("Import failed: " + e.getMessage());
+                    .body("Failed to parse CSV: " + e.getMessage());
         }
     }
 
