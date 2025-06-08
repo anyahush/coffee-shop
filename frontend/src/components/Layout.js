@@ -15,7 +15,7 @@ export default function Layout() {
                                 <Link className="nav-link text-white" to="/reorder">Reorder</Link>
                             </li>
                             <li className="nav-item">
-                                <Link className="nav-link text-white" to="/import">Import CSV</Link>
+                                <Link className="nav-link text-white" to="/import">Import</Link>
                             </li>
                         </ul>
                     </div>
