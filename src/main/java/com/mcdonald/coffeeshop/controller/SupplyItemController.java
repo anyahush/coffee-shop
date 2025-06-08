@@ -1,4 +1,5 @@
 package com.mcdonald.coffeeshop.controller;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.mcdonald.coffeeshop.model.SupplierInfo;
 import com.mcdonald.coffeeshop.model.SupplyItem;
 import com.mcdonald.coffeeshop.service.SupplyItemService;
@@ -13,6 +14,7 @@ import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/supplies")
@@ -115,39 +117,38 @@ public class SupplyItemController {
         try {
             CsvMapper mapper = new CsvMapper();
             CsvSchema schema = CsvSchema.emptySchema().withHeader();
-            // read each row as a Map<String,String>
             MappingIterator<Map<String,String>> it = mapper
-                    .readerFor(Map.class)
+                    .readerFor(new TypeReference<Map<String,String>>() {})
                     .with(schema)
                     .readValues(file.getInputStream());
 
             while (it.hasNext()) {
                 Map<String,String> row = it.next();
-                // build SupplyItem manually
-                SupplyItem item = new SupplyItem();
-                item.setName(row.get("name"));
-                item.setCategory(row.get("category"));
-                item.setQuantityInStock(Integer.valueOf(row.get("quantityInStock")));
-                item.setReorderLevel(Integer.valueOf(row.get("reorderLevel")));
 
-                // nested supplier fields
+                // build the incoming SupplyItem
+                SupplyItem toUpsert = new SupplyItem();
+                toUpsert.setName(row.get("name"));
+                toUpsert.setCategory(row.get("category"));
+                toUpsert.setQuantityInStock(Integer.valueOf(row.get("quantityInStock")));
+                toUpsert.setReorderLevel(   Integer.valueOf(row.get("reorderLevel")));
+
                 SupplierInfo sup = new SupplierInfo();
-                sup.setName(row.get("supplier.name"));
+                sup.setName(         row.get("supplier.name"));
                 sup.setContact(row.get("supplier.contactEmail"));
-                item.setSupplier(sup);
+                toUpsert.setSupplier(sup);
 
-                service.createOrUpdate(item);
+                // UP SERT in one call:
+                service.upsert(toUpsert);
             }
 
             return ResponseEntity.ok("Imported successfully");
-        } catch (IOException e) {
-            return ResponseEntity
-                    .badRequest()
+        }
+        catch (IOException e) {
+            return ResponseEntity.badRequest()
                     .body("Failed to parse CSV: " + e.getMessage());
-        } catch (RuntimeException e) {
-            // catch NumberFormat, missing keys, etc.
-            return ResponseEntity
-                    .status(500)
+        }
+        catch (RuntimeException e) {
+            return ResponseEntity.status(500)
                     .body("Import error on row: " + e.getMessage());
         }
     }

@@ -68,4 +68,24 @@ public class SupplyItemService {
                         && si.getQuantityInStock() <= si.getReorderLevel())
                 .toList();
     }
+
+    public SupplyItem upsert(SupplyItem incoming) {
+        String name = incoming.getName();
+        String supName = incoming.getSupplier().getName();
+
+        // 1) exact match
+        return repository.findByNameAndSupplierName(name, supName)
+                .map(existing -> {
+                    // update fields on the existing entity
+                    existing.setCategory(incoming.getCategory());
+                    existing.setQuantityInStock(incoming.getQuantityInStock());
+                    existing.setReorderLevel(incoming.getReorderLevel());
+                    // supplier is unchanged
+                    return repository.save(existing);
+                })
+                .orElseGet(() -> {
+                    // no exact match → always insert a new row
+                    return repository.save(incoming);
+                });
+    }
 }

@@ -4,6 +4,7 @@ import com.mcdonald.coffeeshop.model.SupplyItem;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Spring Data JPA repository for SupplyItem.
@@ -19,4 +20,10 @@ public interface SupplyItemRepository extends JpaRepository<SupplyItem, Long> {
 
     // Find all items where the embedded SupplierInfo.name contains the given snippet
     List<SupplyItem> findBySupplierNameContainingIgnoreCase(String supplierName);
+
+    // Find *any* item by exact name and supplier name
+    Optional<SupplyItem> findByNameAndSupplierName(String name, String supplierName);
+
+    // Find *any* item by name regardless of supplier
+    Optional<SupplyItem> findFirstByName(String name);
 }
