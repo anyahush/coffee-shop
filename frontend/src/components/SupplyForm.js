@@ -63,6 +63,7 @@ export default function SupplyForm({ initialData = {}, onSubmit, onCancel }) {
                         id={id}
                         type={type}
                         className="form-control"
+                        min="0"
                         style={{ width }}
                         value={form[id]}
                         onChange={handleChange}
