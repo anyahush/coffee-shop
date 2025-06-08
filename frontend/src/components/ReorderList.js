@@ -23,11 +23,6 @@ export default function ReorderList({ items }) {
                     <td>{item.quantityInStock}</td>
                     <td>{item.reorderLevel}</td>
                     <td>{item.supplier?.name}</td>
-                    <td>
-                        {/* You can wire these up if you’d like edit/delete on reorder page */}
-                        <button className="btn btn-sm btn-outline-primary me-2">Edit</button>
-                        <button className="btn btn-sm btn-outline-danger">Delete</button>
-                    </td>
                 </tr>
             ))}
             </tbody>
