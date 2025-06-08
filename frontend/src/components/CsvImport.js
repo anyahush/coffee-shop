@@ -22,6 +22,8 @@ export default function CsvImport({ onImport }) {
                     type="file"
                     accept=".csv"
                     ref={fileInput}
+                    aria-label="Choose file"
+                    data-testid="csv-input"
                     className="form-control"
                 />
             </div>
