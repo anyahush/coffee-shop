@@ -23,7 +23,7 @@ export default function SupplyForm({ initialData, onSubmit, onCancel }) {
                 quantityInStock: initialData.quantityInStock.toString(),
                 reorderLevel:    initialData.reorderLevel.toString(),
                 supplierName:    initialData.supplier?.name || '',
-                supplierContact: initialData.supplier?.contactEmail || ''
+                supplierContact: initialData.supplier?.contact || ''
              };
         }
         return emptyForm;
@@ -39,7 +39,7 @@ export default function SupplyForm({ initialData, onSubmit, onCancel }) {
                 quantityInStock: initialData.quantityInStock.toString(),
                 reorderLevel:    initialData.reorderLevel.toString(),
                 supplierName:    initialData.supplier?.name || '',
-                supplierContact: initialData.supplier?.contactEmail || ''
+                supplierContact: initialData.supplier?.contact || ''
             });
         } else {
             setForm(emptyForm);
@@ -64,7 +64,7 @@ export default function SupplyForm({ initialData, onSubmit, onCancel }) {
                 reorderLevel:    parseInt(form.reorderLevel, 10),
             supplier: {
                 name: form.supplierName.trim(),
-                    contactEmail:  form.supplierContact.trim()
+                    contact:  form.supplierContact.trim()
             }
         };
         onSubmit(payload);
